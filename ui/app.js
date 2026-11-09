@@ -157,35 +157,71 @@ el.chkCustomOut.addEventListener("change", (e) => {
   }
 });
 
-// 3. Scan & File Detection
-async function refreshFiles() {
-  const raw = el.inputPath.value.trim();
-  if (!raw) {
-    state.targetFiles = [];
-    el.fileCountLabel.textContent = "対象画像: 0 件";
-    el.fileCountLabel.style.color = "#38bdf8";
-    el.btnStart.disabled = true;
-    return;
+// 3. Scan & File Detection (Async with progress & debounce)
+let scanDebounceTimer = null;
+let isScanning = false;
+
+// Scan progress event listener from backend
+listen("scan_progress", (event) => {
+  if (isScanning && event.payload) {
+    const count = event.payload.count || 0;
+    el.fileCountLabel.textContent = `スキャン中: ${count.toLocaleString()} 件検出...`;
+    el.fileCountLabel.style.color = "#f59e0b";
+  }
+});
+
+function refreshFiles(immediate = false) {
+  if (scanDebounceTimer) {
+    clearTimeout(scanDebounceTimer);
+    scanDebounceTimer = null;
   }
 
-  const paths = raw.split(";").map((p) => p.trim()).filter(Boolean);
-  const recursive = el.chkRecursive.checked;
+  const runScan = async () => {
+    const raw = el.inputPath.value.trim();
+    if (!raw) {
+      state.targetFiles = [];
+      el.fileCountLabel.textContent = "対象画像: 0 件";
+      el.fileCountLabel.style.color = "#38bdf8";
+      el.btnStart.disabled = true;
+      isScanning = false;
+      return;
+    }
 
-  try {
-    const res = await invoke("scan_paths", { paths, recursive });
-    if (!res) return;
+    const paths = raw.split(";").map((p) => p.trim()).filter(Boolean);
+    const recursive = el.chkRecursive.checked;
 
-    state.targetFiles = res.files;
-    el.fileCountLabel.textContent = `対象画像: ${res.total_files} 件`;
-    el.fileCountLabel.style.color = res.total_files > 0 ? "#38bdf8" : "#ef4444";
-    el.btnStart.disabled = res.total_files === 0;
-  } catch (err) {
-    console.error("Scan error:", err);
+    isScanning = true;
+    el.fileCountLabel.textContent = "スキャン中...";
+    el.fileCountLabel.style.color = "#f59e0b";
+    el.btnStart.disabled = true;
+
+    try {
+      const res = await invoke("scan_paths", { paths, recursive });
+      // 他の新しいスキャンによりキャンセルされた場合は無視
+      if (!res) return;
+
+      state.targetFiles = res.files;
+      el.fileCountLabel.textContent = `対象画像: ${res.total_files.toLocaleString()} 件`;
+      el.fileCountLabel.style.color = res.total_files > 0 ? "#38bdf8" : "#ef4444";
+      el.btnStart.disabled = res.total_files === 0;
+    } catch (err) {
+      console.error("Scan error:", err);
+      el.fileCountLabel.textContent = "スキャン失敗";
+      el.fileCountLabel.style.color = "#ef4444";
+    } finally {
+      isScanning = false;
+    }
+  };
+
+  if (immediate) {
+    runScan();
+  } else {
+    scanDebounceTimer = setTimeout(runScan, 150);
   }
 }
 
-el.inputPath.addEventListener("input", refreshFiles);
-el.chkRecursive.addEventListener("change", refreshFiles);
+el.inputPath.addEventListener("input", () => refreshFiles(false));
+el.chkRecursive.addEventListener("change", () => refreshFiles(true));
 
 // Clear button
 el.btnClearInput.addEventListener("click", () => {

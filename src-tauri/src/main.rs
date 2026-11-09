@@ -8,13 +8,13 @@ mod context_menu;
 mod engine;
 
 use std::path::{Path, PathBuf};
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::Arc;
 use std::sync::Mutex;
 use tauri::{Emitter, State};
 
 use tools::{locate_tools, ToolStatus};
-use scanner::{scan_multiple_paths, ScanResult};
+use scanner::{scan_multiple_paths_with_progress, ScanResult};
 use engine::{
     get_default_presets, ConversionPreset, ConversionOptions,
     FileConvertResult, ProgressEventPayload, convert_single_file,
@@ -26,6 +26,8 @@ struct AppState {
     is_converting: Arc<AtomicBool>,
     tool_status: Mutex<ToolStatus>,
     initial_args: Mutex<Vec<String>>,
+    scan_generation: Arc<AtomicU64>,
+    active_scan_cancel: Mutex<Arc<AtomicBool>>,
 }
 
 #[tauri::command]
@@ -50,8 +52,51 @@ fn get_presets() -> Vec<ConversionPreset> {
 }
 
 #[tauri::command]
-fn scan_paths(paths: Vec<String>, recursive: bool) -> ScanResult {
-    scan_multiple_paths(&paths, recursive)
+async fn scan_paths(
+    app: tauri::AppHandle,
+    state: State<'_, AppState>,
+    paths: Vec<String>,
+    recursive: bool,
+) -> Result<Option<ScanResult>, String> {
+    let my_gen = state.scan_generation.fetch_add(1, Ordering::SeqCst) + 1;
+    let new_cancel = Arc::new(AtomicBool::new(false));
+
+    // 直前のスキャンが実行中であれば中断シグナルを送信
+    {
+        let mut old_cancel = state.active_scan_cancel.lock().unwrap();
+        old_cancel.store(true, Ordering::SeqCst);
+        *old_cancel = new_cancel.clone();
+    }
+
+    let scan_gen = state.scan_generation.clone();
+
+    tokio::task::spawn_blocking(move || {
+        let app_handle = app.clone();
+        let res = scan_multiple_paths_with_progress(
+            &paths,
+            recursive,
+            &new_cancel,
+            |count, bytes| {
+                if scan_gen.load(Ordering::Relaxed) == my_gen {
+                    let _ = app_handle.emit(
+                        "scan_progress",
+                        serde_json::json!({
+                            "count": count,
+                            "bytes": bytes,
+                        }),
+                    );
+                }
+            },
+        );
+
+        if scan_gen.load(Ordering::Relaxed) != my_gen {
+            return Ok(None);
+        }
+
+        Ok(res)
+    })
+    .await
+    .map_err(|e| e.to_string())?
 }
 
 #[tauri::command]
@@ -278,6 +323,8 @@ fn main() {
         is_converting: Arc::new(AtomicBool::new(false)),
         tool_status: Mutex::new(initial_tools),
         initial_args: Mutex::new(args),
+        scan_generation: Arc::new(AtomicU64::new(0)),
+        active_scan_cancel: Mutex::new(Arc::new(AtomicBool::new(false))),
     };
 
     tauri::Builder::default()
