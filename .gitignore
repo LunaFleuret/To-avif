@@ -1,0 +1,61 @@
+# Rust / Cargo
+target/
+src-tauri/target/
+src-tauri/gen/
+**/*.rs.bk
+
+# Executables & Binaries
+*.exe
+*.dll
+bin/
+temp_setup/
+
+# Media & Generated Images
+*.avif
+*.jpg
+*.jpeg
+*.png
+!.github/assets/*.png
+!ui/icons/*.png
+!src-tauri/icons/*.png
+!src-tauri/icons/*.ico
+*.webp
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual Environment
+.venv/
+env/
+venv/
+ENV/
+
+# Build / Distribution
+build/
+dist/
+*.egg-info/
+
+# Environment and Secrets
+.env
+.env.*
+!.env.example
+credentials.json
+service_account.json
+
+# IDE / Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# AI Documents / Workspace notes
+GEMINI.md
+CLAUDE.md
+.gemini/
+
+# Temporary / Output files
+*.tmp
+*.temp
+*.log
