@@ -112,33 +112,45 @@ pub fn convert_single_file(
         "yuv444p10le"
     };
 
+    // 静止画エンコード用最適化パラメータ (先読み・GOPバッファを最小化してメモリ消費を激減＆8K対応)
+    let mut svt_params = vec![
+        "lookahead=0".to_string(),
+        "keyint=1".to_string(),
+        "lp=1".to_string(),
+    ];
+
+    if options.preset_id == "lossless" || options.crf == 0 {
+        svt_params.push("lossless=1".to_string());
+    } else if options.preset_id == "anime" {
+        svt_params.push("tune=0".to_string());
+    } else if options.preset_id == "photo" {
+        svt_params.push("tune=0".to_string());
+        svt_params.push("enable-restoration=1".to_string());
+    }
+
     // Build ffmpeg command
     let mut cmd = Command::new(ffmpeg_cmd);
-    let mut args: Vec<String> = vec![
+    let args: Vec<String> = vec![
         "-y".into(),
         "-hide_banner".into(),
         "-loglevel".into(),
         "error".into(),
         "-i".into(),
         src.to_string_lossy().to_string(),
+        "-frames:v".into(),
+        "1".into(),
         "-c:v".into(),
         "libsvtav1".into(),
         "-crf".into(),
         options.crf.to_string(),
         "-preset".into(),
         options.cpu_used.to_string(),
+        "-svtav1-params".into(),
+        svt_params.join(":"),
+        "-pix_fmt".into(),
+        pix_fmt.into(),
+        dst.to_string_lossy().to_string(),
     ];
-
-    if options.preset_id == "lossless" || options.crf == 0 {
-        args.extend(vec!["-svtav1-params".into(), "lossless=1".into()]);
-    } else if options.preset_id == "anime" {
-        args.extend(vec!["-svtav1-params".into(), "tune=0".into()]);
-    } else if options.preset_id == "photo" {
-        args.extend(vec!["-svtav1-params".into(), "tune=0:enable-restoration=1".into()]);
-    }
-
-    args.extend(vec!["-pix_fmt".into(), pix_fmt.into()]);
-    args.push(dst.to_string_lossy().to_string());
 
     cmd.args(&args);
 

@@ -33,7 +33,16 @@ pub fn copy_metadata_exiftool(
     #[cfg(windows)]
     cmd.creation_flags(CREATE_NO_WINDOW);
 
-    match cmd.output() {
+    let res = cmd.output();
+
+    // 万が一 _original バックアップファイルが生成された場合は自動削除
+    let orig_path_str = format!("{}_original", dst_path.to_string_lossy());
+    let orig_path = Path::new(&orig_path_str);
+    if orig_path.exists() {
+        let _ = std::fs::remove_file(orig_path);
+    }
+
+    match res {
         Ok(output) => {
             if output.status.success() {
                 Ok(true)
@@ -62,6 +71,7 @@ pub fn batch_copy_metadata_exiftool(
 
     let mut args_content = String::new();
     for (src, dst) in pairs {
+        args_content.push_str("-overwrite_original\n");
         args_content.push_str("-TagsFromFile\n");
         args_content.push_str(&format!("{}\n", src.to_string_lossy()));
         args_content.push_str("-all:all>all:all\n");
@@ -85,6 +95,15 @@ pub fn batch_copy_metadata_exiftool(
 
     let res = cmd.output();
     let _ = std::fs::remove_file(&temp_argfile);
+
+    // 万が一 _original バックアップファイルが生成された場合は確実に自動削除
+    for (_, dst) in pairs {
+        let orig_path_str = format!("{}_original", dst.to_string_lossy());
+        let orig_path = Path::new(&orig_path_str);
+        if orig_path.exists() {
+            let _ = std::fs::remove_file(orig_path);
+        }
+    }
 
     match res {
         Ok(out) => {
