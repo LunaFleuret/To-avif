@@ -1,6 +1,6 @@
 [package]
 name = "to-avif"
-version = "1.0.0"
+version = "1.0.1"
 description = "High-Performance Multi-threaded AVIF Batch Converter"
 authors = ["LunaFleuret <LunaFleuret@users.noreply.github.com>"]
 edition = "2021"

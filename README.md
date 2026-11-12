@@ -39,7 +39,11 @@ SVT-AV1 エンコーダーを採用した、Windows 向けの高速・軽量な 
 ## 使い方
 
 ### 1. 起動と初期セットアップ
-1. [Releases](https://github.com/LunaFleuret/To-avif/releases) から最新の ZIP パッケージをダウンロードして任意のフォルダに解凍します。
+1. 以下のボタンから最新版のポータブル ZIP をダウンロードし、任意のフォルダに解凍します。
+
+[![Download Latest Release](https://img.shields.io/badge/Download-To--avif%20(Windows%20ZIP)-2563eb?style=for-the-badge&logo=windows&logoColor=white)](https://github.com/LunaFleuret/To-avif/releases/latest/download/To-avif-windows-x64.zip)
+
+※直接ダウンロードできない場合は [Releases 一覧](https://github.com/LunaFleuret/To-avif/releases) からも取得できます。
 2. フォルダ内の **`to-avif.exe`** を直接ダブルクリックして起動します。
 3. 初回起動時に Windows のエクスプローラー右クリックメニュー（「AVIFに一括変換 (GUI)」）が自動登録されます。
    ※右クリックメニューの解除・再登録は、アプリ画面内の「右クリックメニュー設定」からいつでも切り替え可能です。

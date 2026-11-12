@@ -520,13 +520,16 @@ async function checkToolsStatus() {
     const status = await invoke("check_tools");
     if (!status) return;
 
-    if (!status.ffmpeg_available && !status.exiftool_available) {
+    const ffOk = Boolean(status.ffmpegAvailable ?? status.ffmpeg_available);
+    const exifOk = Boolean(status.exiftoolAvailable ?? status.exiftool_available);
+
+    if (!ffOk && !exifOk) {
       el.toolWarningText.textContent = "FFmpeg および ExifTool が見つかりません。ポータブルフォルダ内の bin フォルダを確認してください。";
       el.toolWarningBanner.classList.remove("hidden");
-    } else if (!status.ffmpeg_available) {
+    } else if (!ffOk) {
       el.toolWarningText.textContent = "FFmpeg が見つかりません。ポータブルフォルダ内の bin フォルダを確認してください。";
       el.toolWarningBanner.classList.remove("hidden");
-    } else if (!status.exiftool_available) {
+    } else if (!exifOk) {
       el.toolWarningText.textContent = "ExifTool が見つかりません（メタデータ引き継ぎが無効化されます）。bin フォルダを確認してください。";
       el.toolWarningBanner.classList.remove("hidden");
     } else {

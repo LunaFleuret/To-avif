@@ -6,6 +6,7 @@ use std::os::windows::process::CommandExt;
 const CREATE_NO_WINDOW: u32 = 0x08000000;
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct ToolStatus {
     pub ffmpeg_available: bool,
     pub ffmpeg_path: Option<String>,

@@ -69,14 +69,17 @@ jobs:
           Copy-Item "LICENSE" -Destination "$pkgDir\LICENSE" -Force
           Copy-Item "THIRD_PARTY_LICENSES.txt" -Destination "$pkgDir\THIRD_PARTY_LICENSES.txt" -Force
 
-          $zipName = "To-avif-$tag-windows-x64.zip"
-          Compress-Archive -Path "$pkgDir\*" -DestinationPath $zipName -Force
-          Write-Output "ZIP_NAME=$zipName" | Out-File -FilePath $env:GITHUB_ENV -Append
+          $zipNameWithTag = "To-avif-$tag-windows-x64.zip"
+          $zipNameFixed = "To-avif-windows-x64.zip"
+          Compress-Archive -Path "$pkgDir\*" -DestinationPath $zipNameWithTag -Force
+          Copy-Item $zipNameWithTag -Destination $zipNameFixed -Force
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: ${{ env.ZIP_NAME }}
+          files: |
+            To-avif-*-windows-x64.zip
+            To-avif-windows-x64.zip
           draft: false
           prerelease: false
           generate_release_notes: true
