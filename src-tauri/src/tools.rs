@@ -38,7 +38,15 @@ fn check_ffmpeg(root_dir: &Path) -> (bool, Option<String>, Option<String>) {
         }
     }
 
-    // 2. Check system PATH
+    // 2. Check root folder (same directory as exe)
+    let root_candidate = root_dir.join("ffmpeg.exe");
+    if root_candidate.exists() {
+        if let Some(ver) = get_ffmpeg_ver(&root_candidate) {
+            return (true, Some(root_candidate.to_string_lossy().to_string()), Some(ver));
+        }
+    }
+
+    // 3. Check system PATH
     let mut cmd = Command::new("ffmpeg");
     cmd.arg("-version");
     #[cfg(windows)]
@@ -65,7 +73,15 @@ fn check_exiftool(root_dir: &Path) -> (bool, Option<String>, Option<String>) {
         }
     }
 
-    // 2. Check system PATH
+    // 2. Check root folder (same directory as exe)
+    let root_candidate = root_dir.join("exiftool.exe");
+    if root_candidate.exists() {
+        if let Some(ver) = get_exiftool_ver(&root_candidate) {
+            return (true, Some(root_candidate.to_string_lossy().to_string()), Some(ver));
+        }
+    }
+
+    // 3. Check system PATH
     let mut cmd = Command::new("exiftool");
     cmd.arg("-ver");
     #[cfg(windows)]

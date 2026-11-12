@@ -1,0 +1,25 @@
+To-avif - Third-Party Software Licenses & Notices
+===================================================
+
+This distribution of To-avif bundles or utilizes the following third-party software components:
+
+1. FFmpeg
+---------
+- License: GNU General Public License version 3 (GPLv3) (or LGPLv3 depending on build configuration)
+- Copyright: (c) 2000-2026 the FFmpeg developers
+- Distribution binary: https://github.com/yt-dlp/FFmpeg-Builds
+- Upstream Website & Source Code: https://ffmpeg.org/
+- Note: FFmpeg is a trademark of Fabrice Bellard, originator of the FFmpeg project. The source code for FFmpeg can be downloaded from the official repository at https://ffmpeg.org/download.html.
+
+2. ExifTool
+-----------
+- License: The Artistic License 1.0 / GNU General Public License (GPL)
+- Copyright: (c) 2003-2026 Phil Harvey
+- Website & Source Code: https://exiftool.org/
+- Note: ExifTool is free software; you can redistribute it and/or modify it under the same terms as Perl itself.
+
+3. To-avif (Application Core)
+-----------------------------
+- License: MIT License
+- Copyright: (c) 2026 LunaFleuret
+- Repository: https://github.com/LunaFleuret/To-avif

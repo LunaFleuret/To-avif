@@ -9,6 +9,16 @@
 <body>
   <div class="window-container">
     
+    <!-- Notification Banners -->
+    <div id="updateBanner" class="alert-banner alert-info hidden">
+      <span id="updateBannerText">新しいバージョンが利用可能です。</span>
+      <button class="btn btn-sm btn-link" id="btnUpdateLink">詳細を見る</button>
+      <button class="banner-close" id="btnCloseUpdateBanner">&times;</button>
+    </div>
+    <div id="toolWarningBanner" class="alert-banner alert-warning hidden">
+      <span id="toolWarningText">必要なツール（FFmpeg / ExifTool）が見つかりません。配布フォルダ内の bin フォルダを確認してください。</span>
+    </div>
+
     <!-- 1. Input Section -->
     <fieldset class="group-box">
       <legend class="group-title">対象フォルダ / ファイル (ドラッグ＆ドロップ対応)</legend>
@@ -75,7 +85,7 @@
 
         <!-- Threads -->
         <div class="setting-row">
-          <span class="setting-label" id="threadLabel">並列処理スレッド数 (CPU検出: 16スレッド):</span>
+          <span class="setting-label" id="threadLabel">並列処理スレッド数:</span>
           <div class="slider-control">
             <input type="range" id="threadSlider" min="1" max="16" value="8" class="slider-bar">
             <input type="number" id="threadSpin" min="1" max="16" value="8" class="spin-input">

@@ -126,6 +126,31 @@ fn trash_files(paths: Vec<String>) -> Result<usize, String> {
 }
 
 #[tauri::command]
+fn get_app_version() -> String {
+    env!("CARGO_PKG_VERSION").to_string()
+}
+
+#[tauri::command]
+fn open_external_url(url: String) -> Result<(), String> {
+    #[cfg(windows)]
+    {
+        use std::process::Command;
+        use std::os::windows::process::CommandExt;
+        Command::new("cmd")
+            .args(["/c", "start", "", &url])
+            .creation_flags(0x08000000)
+            .spawn()
+            .map_err(|e| e.to_string())?;
+        Ok(())
+    }
+    #[cfg(not(windows))]
+    {
+        let _ = url;
+        Ok(())
+    }
+}
+
+#[tauri::command]
 fn cancel_conversion(state: State<'_, AppState>) {
     state.cancel_flag.store(true, Ordering::SeqCst);
 }
@@ -315,6 +340,12 @@ fn main() {
     }
 
     let current_exe = std::env::current_exe().unwrap_or_else(|_| PathBuf::from("."));
+
+    // 自動登録: 未登録の場合は初回起動時にWindows右クリックメニューへ登録
+    if !context_menu::is_context_menu_registered() {
+        let _ = context_menu::register_context_menu(&current_exe);
+    }
+
     let root_dir = current_exe.parent().unwrap_or(Path::new("."));
     let initial_tools = locate_tools(root_dir);
 
@@ -333,6 +364,8 @@ fn main() {
         .manage(state)
         .invoke_handler(tauri::generate_handler![
             check_tools,
+            get_app_version,
+            open_external_url,
             get_cpu_count,
             get_presets,
             scan_paths,

@@ -37,7 +37,7 @@ const PRESETS = {
 // Application State
 let state = {
   selectedPreset: "anime",
-  cpuCount: 16,
+  cpuCount: 8,
   targetFiles: [],
   successfulOrigFiles: [],
   isConverting: false,
@@ -86,6 +86,13 @@ const el = {
   modalDismissBtn: document.getElementById("modalDismissBtn"),
   menuStatusText: document.getElementById("menuStatusText"),
   btnToggleMenuAction: document.getElementById("btnToggleMenuAction"),
+
+  updateBanner: document.getElementById("updateBanner"),
+  updateBannerText: document.getElementById("updateBannerText"),
+  btnUpdateLink: document.getElementById("btnUpdateLink"),
+  btnCloseUpdateBanner: document.getElementById("btnCloseUpdateBanner"),
+  toolWarningBanner: document.getElementById("toolWarningBanner"),
+  toolWarningText: document.getElementById("toolWarningText"),
 };
 
 // Log appending with color classes
@@ -470,8 +477,75 @@ el.btnToggleMenuAction.addEventListener("click", async () => {
   }
 });
 
-// 9. App Initialization
+// 9. App Initialization & Tool/Update Monitoring
+function isNewerVersion(currentVer, latestVer) {
+  const parse = (v) => v.replace(/^v/i, "").split(".").map((n) => parseInt(n, 10) || 0);
+  const cur = parse(currentVer);
+  const lat = parse(latestVer);
+  for (let i = 0; i < Math.max(cur.length, lat.length); i++) {
+    const c = cur[i] || 0;
+    const l = lat[i] || 0;
+    if (l > c) return true;
+    if (l < c) return false;
+  }
+  return false;
+}
+
+async function checkForUpdates() {
+  try {
+    const currentVer = await invoke("get_app_version");
+    if (!currentVer) return;
+
+    const res = await fetch("https://api.github.com/repos/LunaFleuret/To-avif/releases/latest", {
+      headers: { Accept: "application/vnd.github.v3+json" }
+    });
+    if (!res.ok) return;
+
+    const data = await res.json();
+    const latestTag = data.tag_name;
+    if (latestTag && isNewerVersion(currentVer, latestTag)) {
+      el.updateBannerText.textContent = `新しいバージョン (${latestTag}) が公開されています。`;
+      el.updateBanner.classList.remove("hidden");
+      el.btnUpdateLink.onclick = () => {
+        invoke("open_external_url", { url: data.html_url || "https://github.com/LunaFleuret/To-avif/releases" });
+      };
+    }
+  } catch (err) {
+    // オフラインまたはAPI上限時はサイレントに無視
+  }
+}
+
+async function checkToolsStatus() {
+  try {
+    const status = await invoke("check_tools");
+    if (!status) return;
+
+    if (!status.ffmpeg_available && !status.exiftool_available) {
+      el.toolWarningText.textContent = "FFmpeg および ExifTool が見つかりません。ポータブルフォルダ内の bin フォルダを確認してください。";
+      el.toolWarningBanner.classList.remove("hidden");
+    } else if (!status.ffmpeg_available) {
+      el.toolWarningText.textContent = "FFmpeg が見つかりません。ポータブルフォルダ内の bin フォルダを確認してください。";
+      el.toolWarningBanner.classList.remove("hidden");
+    } else if (!status.exiftool_available) {
+      el.toolWarningText.textContent = "ExifTool が見つかりません（メタデータ引き継ぎが無効化されます）。bin フォルダを確認してください。";
+      el.toolWarningBanner.classList.remove("hidden");
+    } else {
+      el.toolWarningBanner.classList.add("hidden");
+    }
+  } catch (err) {
+    console.error("Tools check error:", err);
+  }
+}
+
+el.btnCloseUpdateBanner?.addEventListener("click", () => {
+  el.updateBanner.classList.add("hidden");
+});
+
 async function init() {
+  // Non-blocking tools check and update check
+  checkToolsStatus();
+  checkForUpdates();
+
   try {
     const count = await invoke("get_cpu_count");
     if (count) {
